@@ -22,8 +22,6 @@ action = webdriver.ActionChains(driver)
 action.send_keys(username, Keys.TAB, password, Keys.ENTER).perform()
 sleep(6)
 a = driver.find_elements(by=By.CLASS_NAME, value="live")
-for i in a:
-    print(i.get_attribute('href'))
 
 while True:
     driver.switch_to.window(driver.window_handles[0])
