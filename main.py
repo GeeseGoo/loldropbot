@@ -26,16 +26,17 @@ a = driver.find_elements(by=By.CLASS_NAME, value="live")
 while True:
     driver.switch_to.window(driver.window_handles[0])
     sleep(2)
-    streams = driver.find_elements(by=By.CLASS_NAME, value="live")
+    streams = [i.get_attribute('href') for i in driver.find_elements(by=By.CLASS_NAME, value="live")]
     tabs = []
     for handle in driver.window_handles:
         driver.switch_to.window(handle)
-        tabs.append(driver.current_url)
+        url = driver.current_url
+        tabs.append('/'.join(url.split("/")[:-1]))
         sleep(1)
     for i in streams:
-        if i.get_attribute('href') not in tabs:
-            driver.execute_script(f"window.open('{i.get_attribute('href')}','_blank');")
+        if i not in tabs:
+            driver.execute_script(f"window.open('{i}','_blank');")
             driver.switch_to.window(driver.window_handles[-1])
-            sleep(5)
-
+            print(i)
+            sleep(3)
     sleep(300)
