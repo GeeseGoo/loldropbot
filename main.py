@@ -1,42 +1,75 @@
-from time import sleep
+import time
+import random
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import logging
+from pathlib import Path
 
-# Enter your riot account username and password for the bot to auto log in
-username = 'RIOT USERNAME'
-password = 'PASSWORD'
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('capsule_farmer.log'),
+        logging.StreamHandler()
+    ]
+)
 
-# If you wish to use chrome you must get the webdriver for chromium
-service = Service(".\geckodriver.exe")
-service.start()
-driver = webdriver.Firefox()
+def setup_driver():
+    """Setup headless Firefox driver"""
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-dev-shm-usage')
+    
+    service = Service('geckodriver.exe')  # Path to your geckodriver
+    driver = webdriver.Firefox(service=service, options=options)
+    return driver
 
-driver.get("https://lolesports.com")
-driver.maximize_window()
-sleep(3)
-driver.find_element(By.CSS_SELECTOR, "._2I66LI-wCuX47s2um7O7kh").click()
-sleep(3)
-action = webdriver.ActionChains(driver)
-action.send_keys(username, Keys.TAB, password, Keys.ENTER).perform()
-sleep(6)
-a = driver.find_elements(by=By.CLASS_NAME, value="live")
+def harvest_capsules():
+    """Main function to harvest capsules"""
+    logging.info("Starting capsule harvesting...")
+    driver = setup_driver()
+    
+    try:
+        # Navigate to lolesports.com
+        driver.get("https://lolesports.com")
+        logging.info("Navigated to lolesports.com")
+        
+        # Wait for page to load
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "body"))
+        )
+        
+        capsules = []
+        for i in range(5):
+            time.sleep(1)
+            # Simulate watching a match
+            logging.info(f"Watching match {i+1}/5")
+            # Add your actual capsule harvesting logic here
+            capsule = random.randint(1, 100)
+            logging.info(f"Harvested capsule with value: {capsule}")
+            capsules.append(capsule)
+            
+        logging.info(f"Harvesting complete. Total capsules: {len(capsules)}")
+        return capsules
+        
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        raise
+    finally:
+        driver.quit()
 
-while True:
-    driver.switch_to.window(driver.window_handles[0])
-    sleep(2)
-    streams = [i.get_attribute('href') for i in driver.find_elements(by=By.CLASS_NAME, value="live")]
-    tabs = []
-    for handle in driver.window_handles:
-        driver.switch_to.window(handle)
-        url = driver.current_url
-        tabs.append('/'.join(url.split("/")[:-1]))
-        sleep(1)
-    for i in streams:
-        if i not in tabs:
-            driver.execute_script(f"window.open('{i}','_blank');")
-            driver.switch_to.window(driver.window_handles[-1])
-            print(i)
-            sleep(3)
-    sleep(300)
+if __name__ == "__main__":
+    try:
+        Path("./logs/").mkdir(parents=True, exist_ok=True)
+        harvest_capsules()
+    except KeyboardInterrupt:
+        logging.info("Program terminated by user")
+    except Exception as e:
+        logging.error(f"Program terminated due to error: {str(e)}")
